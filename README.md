@@ -79,7 +79,7 @@ sudo reboot
 Copy all project files to the Pi (replace `pi@raspberrypi.local` with your Pi's address):
 
 ```bash
-scp -r /path/to/alarmclock pi@raspberrypi.local:~/alarmclock
+rsync -av --exclude .git /path/to/alarmclock pi@raspberrypi.local:~/
 ```
 
 ### 4. Install Dependencies
@@ -98,7 +98,13 @@ pip install -r requirements.txt
 
 ### 5. Configure for Real Hardware
 
-Edit `config.json`:
+Edit `config.json` on the Pi:
+
+```bash
+nano ~/alarmclock/config.json
+```
+
+Set `use_mock_hardware` to `false`:
 
 ```json
 {
@@ -110,15 +116,11 @@ Edit `config.json`:
 }
 ```
 
-### 6. Add Alarm Sounds
-
-Copy MP3, WAV, OGG, or FLAC files to the `sounds/` directory.
-
-### 7. Wire the Hardware
+### 6. Wire the Hardware
 
 Follow the instructions in [wiring/WIRING.md](wiring/WIRING.md) and use the test scripts to verify each component.
 
-### 8. Verify I2C Devices
+### 7. Verify I2C Devices
 
 ```bash
 i2cdetect -y 1
@@ -126,12 +128,20 @@ i2cdetect -y 1
 
 You should see devices at addresses `0x68` (RTC) and `0x70` (display).
 
-### 9. Run the Application
+### 8. Run the Application
 
 ```bash
 source ~/alarmclock/clockenv/bin/activate
 cd ~/alarmclock
 python app.py
+```
+
+### 9. Add Alarm Sounds (Optional)
+
+A default alarm sound is included. To add more sounds, copy MP3, WAV, OGG, or FLAC files from your computer to the Pi:
+
+```bash
+rsync -av /path/to/your/sounds/ pi@raspberrypi.local:~/alarmclock/sounds/
 ```
 
 Access the web UI at `http://<pi-ip>:5000`

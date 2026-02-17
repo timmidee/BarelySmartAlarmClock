@@ -40,7 +40,9 @@ class Display:
         self._brightness = 10
         self._colon = True
         self._alarm_indicator = False
+        self._alarm_armed = False
         self._rtc = None
+        self._alarm_manager = None
 
         self._device = None
         if not mock:
@@ -70,6 +72,10 @@ class Display:
         """Set the RTC reference for time display."""
         self._rtc = rtc
 
+    def set_alarm_manager(self, alarm_manager):
+        """Set the alarm manager reference to check armed state."""
+        self._alarm_manager = alarm_manager
+
     def set_brightness(self, level):
         """Set display brightness (0-15)."""
         self._brightness = max(0, min(15, level))
@@ -96,11 +102,15 @@ class Display:
 
             # Set colon (blinking effect handled in update loop)
             self._device.colon = self._colon
+
+            # Upper-left dot indicates alarm is armed
+            self._device.ampm = self._alarm_armed
         else:
             # Mock mode - log to console
             colon = ':' if self._colon else ' '
             indicator = '*' if self._alarm_indicator else ' '
-            logger.debug(f"Display: {hours:02d}{colon}{minutes:02d} {indicator}")
+            armed = 'A' if self._alarm_armed else ' '
+            logger.debug(f"Display: {armed}{hours:02d}{colon}{minutes:02d} {indicator}")
 
     def show_text(self, text):
         """Display text on the 7-segment display (limited to 4 chars)."""
@@ -133,6 +143,11 @@ class Display:
                 # Blink colon every half second
                 blink_counter += 1
                 self._colon = (blink_counter % 2) == 0
+
+                # Check if any alarm is within the next 12 hours
+                if self._alarm_manager:
+                    next_alarm = self._alarm_manager.get_next_alarm_info()
+                    self._alarm_armed = next_alarm is not None and next_alarm['minutes_until'] <= 720
 
                 # If alarm is ringing, blink the display
                 if self._alarm_indicator:

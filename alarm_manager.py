@@ -90,19 +90,14 @@ class AlarmManager:
             logger.error(f"Failed to save overrides: {e}")
 
     def _cleanup_expired_overrides(self):
-        """Remove overrides for past dates."""
+        """Remove overrides for past dates (not today - those are cleared on trigger/dismiss)."""
         now = self.rtc.get_time()
-        today = now.strftime('%Y-%m-%d')
-        current_time = now.strftime('%H:%M')
+        yesterday = (now - timedelta(days=1)).strftime('%Y-%m-%d')
 
         expired = []
         for override_id, override in self.overrides.items():
             target_date = override.get('target_date', '')
-            override_time = override.get('override_time')
-            # Expired if date is in the past, or if today and time has passed
-            if target_date < today:
-                expired.append(override_id)
-            elif target_date == today and override_time and override_time < current_time:
+            if target_date <= yesterday:
                 expired.append(override_id)
 
         for override_id in expired:

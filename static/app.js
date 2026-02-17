@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadSounds();
     loadSettings();
     updateClock();
+    checkStatus();
     setInterval(updateClock, 1000);
     setInterval(checkStatus, 5000);
 });
@@ -86,7 +87,8 @@ function updateNextAlarmBanner() {
         thursday: 'Thursday', friday: 'Friday', saturday: 'Saturday', sunday: 'Sunday'
     };
     const dayName = dayNames[nextAlarmInfo.day.toLowerCase()] || nextAlarmInfo.day;
-    labelEl.textContent = nextAlarmInfo.label || dayName;
+    const labelText = nextAlarmInfo.label ? `${nextAlarmInfo.label} · ${dayName}` : dayName;
+    labelEl.textContent = labelText;
 
     // Display countdown
     const mins = nextAlarmInfo.minutes_until;

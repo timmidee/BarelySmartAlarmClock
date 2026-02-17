@@ -362,6 +362,7 @@ def init_hardware(config):
     )
 
     display.set_brightness(config.get('display_brightness', 10))
+    display.set_alarm_manager(alarm_manager)
     audio_player.set_volume(config.get('volume', 80))
 
     logger.info(f"Hardware initialized (mock={use_mock})")
