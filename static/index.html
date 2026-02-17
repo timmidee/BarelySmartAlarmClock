@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alarm Clock</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⏰</text></svg>">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <button class="btn-settings" onclick="showSettings()" title="Settings">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                </svg>
+            </button>
+            <div class="clock" id="clock">--:--</div>
+            <div class="date" id="date">Loading...</div>
+            <div class="next-alarm-banner" id="next-alarm-banner" onclick="editNextAlarm()">
+                <div class="next-alarm-content">
+                    <div class="next-alarm-time" id="next-alarm-time">--:--</div>
+                    <div class="next-alarm-info">
+                        <span class="next-alarm-label" id="next-alarm-label"></span>
+                        <span class="next-alarm-countdown" id="next-alarm-countdown"></span>
+                    </div>
+                </div>
+                <span class="next-alarm-badge hidden" id="next-alarm-badge">Modified</span>
+                <svg class="next-alarm-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </div>
+        </header>
+
+        <div id="alarm-ringing" class="alarm-ringing hidden">
+            <div class="ringing-text">ALARM!</div>
+            <div class="ringing-buttons">
+                <button class="btn btn-snooze" onclick="snoozeAlarm()">Snooze</button>
+                <button class="btn btn-dismiss" onclick="dismissAlarm()">Dismiss</button>
+            </div>
+        </div>
+
+        <main>
+            <div class="section-header">
+                <h2>Alarms</h2>
+                <button class="btn btn-add" onclick="showAddAlarm()">+ Add</button>
+            </div>
+
+            <div id="alarms-list" class="alarms-list">
+                <div class="loading">Loading alarms...</div>
+            </div>
+        </main>
+
+        <!-- Add/Edit Alarm Modal -->
+        <div id="alarm-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="modal-title">Add Alarm</h3>
+                    <button class="btn-close" onclick="closeModal()">&times;</button>
+                </div>
+                <form id="alarm-form" onsubmit="saveAlarm(event)">
+                    <input type="hidden" id="alarm-id">
+
+                    <div class="form-group">
+                        <label for="alarm-time">Time</label>
+                        <input type="time" id="alarm-time" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="alarm-label">Label (optional)</label>
+                        <input type="text" id="alarm-label" placeholder="e.g., Work, Gym">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Days</label>
+                        <div class="days-selector">
+                            <button type="button" class="day-btn" data-day="mon">M</button>
+                            <button type="button" class="day-btn" data-day="tue">T</button>
+                            <button type="button" class="day-btn" data-day="wed">W</button>
+                            <button type="button" class="day-btn" data-day="thu">T</button>
+                            <button type="button" class="day-btn" data-day="fri">F</button>
+                            <button type="button" class="day-btn" data-day="sat">S</button>
+                            <button type="button" class="day-btn" data-day="sun">S</button>
+                        </div>
+                        <div class="quick-select">
+                            <button type="button" class="btn-quick" onclick="selectWeekdays()">Weekdays</button>
+                            <button type="button" class="btn-quick" onclick="selectWeekends()">Weekends</button>
+                            <button type="button" class="btn-quick" onclick="selectAll()">Every day</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="alarm-sound">Sound</label>
+                        <div class="sound-selector">
+                            <select id="alarm-sound">
+                                <option value="default.mp3">Default</option>
+                            </select>
+                            <button type="button" class="btn-preview" onclick="previewSound()">▶</button>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-cancel" onclick="closeModal()">Cancel</button>
+                        <button type="submit" class="btn btn-save">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Delete Confirmation Modal -->
+        <div id="delete-modal" class="modal hidden">
+            <div class="modal-content modal-small">
+                <h3>Delete Alarm?</h3>
+                <p>This action cannot be undone.</p>
+                <div class="form-actions">
+                    <button class="btn btn-cancel" onclick="closeDeleteModal()">Cancel</button>
+                    <button class="btn btn-delete" onclick="confirmDelete()">Delete</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Modal -->
+        <div id="settings-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Settings</h3>
+                    <button class="btn-close" onclick="closeSettings()">&times;</button>
+                </div>
+                <form id="settings-form" onsubmit="saveSettings(event)">
+                    <div class="form-group">
+                        <label for="setting-volume">Volume</label>
+                        <div class="slider-group">
+                            <input type="range" id="setting-volume" min="0" max="100" value="80">
+                            <span id="volume-value">80%</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="setting-sound">Default Alarm Sound</label>
+                        <div class="sound-selector">
+                            <select id="setting-sound">
+                                <option value="">Select a sound...</option>
+                            </select>
+                            <button type="button" class="btn-preview" onclick="previewSettingsSound()">▶</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="setting-snooze">Snooze Duration (minutes)</label>
+                        <input type="number" id="setting-snooze" min="1" max="30" value="9">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="setting-brightness">Display Brightness</label>
+                        <div class="slider-group">
+                            <input type="range" id="setting-brightness" min="0" max="15" value="10">
+                            <span id="brightness-value">10</span>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-cancel" onclick="closeSettings()">Cancel</button>
+                        <button type="submit" class="btn btn-save">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Instance Edit Modal -->
+        <div id="instance-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Edit Next Alarm</h3>
+                    <button class="btn-close" onclick="closeInstanceModal()">&times;</button>
+                </div>
+                <div class="instance-info">
+                    <div class="instance-date" id="instance-date"></div>
+                    <div class="instance-label" id="instance-label"></div>
+                </div>
+                <form id="instance-form" onsubmit="saveInstance(event)">
+                    <div class="form-group">
+                        <label for="instance-time">Time (for this day only)</label>
+                        <input type="time" id="instance-time" required>
+                        <div class="instance-original" id="instance-original"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="instance-sound">Sound</label>
+                        <div class="sound-selector">
+                            <select id="instance-sound">
+                                <option value="">Use default</option>
+                            </select>
+                            <button type="button" class="btn-preview" onclick="previewInstanceSound()">▶</button>
+                        </div>
+                    </div>
+
+                    <div class="instance-actions">
+                        <button type="button" class="btn btn-skip" onclick="skipInstance()">
+                            Skip This Alarm
+                        </button>
+                        <button type="button" class="btn btn-restore hidden" id="btn-restore" onclick="restoreInstance()">
+                            Restore Original
+                        </button>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-cancel" onclick="closeInstanceModal()">Cancel</button>
+                        <button type="submit" class="btn btn-save">Save Changes</button>
+                    </div>
+
+                    <div class="instance-edit-recurring">
+                        <a href="#" onclick="editRecurringAlarm(event)">Edit recurring schedule</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

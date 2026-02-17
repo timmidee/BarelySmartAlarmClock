@@ -1,0 +1,2 @@
+Add MP3, WAV, OGG, or FLAC audio files to this directory.
+The first file alphabetically will be used as the default sound.

@@ -1,0 +1,694 @@
+:root {
+    --bg-primary: #1a1a2e;
+    --bg-secondary: #16213e;
+    --bg-card: #1f2940;
+    --text-primary: #eee;
+    --text-secondary: #888;
+    --accent: #4361ee;
+    --accent-hover: #3651d4;
+    --success: #4caf50;
+    --danger: #e63946;
+    --warning: #f4a261;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    line-height: 1.5;
+}
+
+.container {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 20px;
+    padding-bottom: 40px;
+}
+
+/* Header / Clock Display */
+header {
+    text-align: center;
+    padding: 30px 0;
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.btn-settings {
+    position: absolute;
+    top: 20px;
+    right: 0;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.btn-settings:hover {
+    color: var(--text-primary);
+    background: var(--bg-card);
+}
+
+.clock {
+    font-size: 4.5rem;
+    font-weight: 200;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 2px;
+    color: var(--text-primary);
+}
+
+.date {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    margin-top: 5px;
+}
+
+/* Next Alarm Banner */
+.next-alarm-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin-top: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.next-alarm-banner:hover {
+    background: #2a3650;
+}
+
+.next-alarm-banner.no-alarm {
+    justify-content: center;
+    cursor: default;
+    opacity: 0.6;
+}
+
+.next-alarm-banner.no-alarm:hover {
+    background: var(--bg-card);
+}
+
+.next-alarm-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.next-alarm-time {
+    font-size: 1.5rem;
+    font-weight: 300;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent);
+}
+
+.next-alarm-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.next-alarm-label {
+    font-size: 0.9rem;
+    color: var(--text-primary);
+}
+
+.next-alarm-countdown {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.next-alarm-badge {
+    background: var(--warning);
+    color: #1a1a2e;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 10px;
+    text-transform: uppercase;
+}
+
+.next-alarm-chevron {
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+/* Alarm Ringing Banner */
+.alarm-ringing {
+    background: linear-gradient(135deg, var(--danger), #ff6b6b);
+    border-radius: 16px;
+    padding: 30px;
+    text-align: center;
+    margin-bottom: 20px;
+    animation: pulse 1s infinite alternate;
+}
+
+@keyframes pulse {
+    from { transform: scale(1); opacity: 1; }
+    to { transform: scale(1.02); opacity: 0.9; }
+}
+
+.ringing-text {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+.ringing-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.btn-snooze {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.btn-dismiss {
+    background: white;
+    color: var(--danger);
+}
+
+/* Section Header */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.section-header h2 {
+    font-size: 1.3rem;
+    font-weight: 500;
+}
+
+/* Buttons */
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+.btn-add {
+    background: var(--accent);
+    color: white;
+}
+
+.btn-add:hover {
+    background: var(--accent-hover);
+}
+
+/* Alarms List */
+.alarms-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.loading {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-secondary);
+}
+
+.no-alarms {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-secondary);
+}
+
+.no-alarms p {
+    margin-bottom: 20px;
+}
+
+/* Alarm Card */
+.alarm-card {
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    transition: all 0.2s;
+}
+
+.alarm-card.disabled {
+    opacity: 0.5;
+}
+
+.alarm-card:hover {
+    background: #2a3650;
+}
+
+.alarm-info {
+    flex: 1;
+    cursor: pointer;
+}
+
+.alarm-time {
+    font-size: 2rem;
+    font-weight: 300;
+    font-variant-numeric: tabular-nums;
+}
+
+.alarm-label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+.alarm-days {
+    font-size: 0.8rem;
+    color: var(--accent);
+    margin-top: 4px;
+}
+
+/* Toggle Switch */
+.toggle {
+    position: relative;
+    width: 50px;
+    height: 28px;
+}
+
+.toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    inset: 0;
+    background: #444;
+    border-radius: 28px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.toggle-slider::before {
+    content: '';
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    left: 3px;
+    bottom: 3px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.3s;
+}
+
+.toggle input:checked + .toggle-slider {
+    background: var(--success);
+}
+
+.toggle input:checked + .toggle-slider::before {
+    transform: translateX(22px);
+}
+
+/* Delete Button */
+.btn-delete-alarm {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.2rem;
+    padding: 8px;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.btn-delete-alarm:hover {
+    background: var(--danger);
+    color: white;
+}
+
+/* Modal */
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 100;
+    animation: fadeIn 0.2s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal-content {
+    background: var(--bg-secondary);
+    border-radius: 20px 20px 0 0;
+    padding: 24px;
+    width: 100%;
+    max-width: 480px;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideUp 0.3s;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}
+
+.modal-small {
+    border-radius: 16px;
+    max-width: 320px;
+    text-align: center;
+}
+
+.modal-small p {
+    color: var(--text-secondary);
+    margin: 15px 0 25px;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.modal-header h3 {
+    font-size: 1.3rem;
+    font-weight: 500;
+}
+
+.btn-close {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.8rem;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+}
+
+/* Form */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.form-group input[type="time"],
+.form-group input[type="text"],
+.form-group select {
+    width: 100%;
+    padding: 14px;
+    background: var(--bg-card);
+    border: 1px solid #333;
+    border-radius: 10px;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+}
+
+.form-group input[type="time"] {
+    font-size: 1.5rem;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+/* Days Selector */
+.days-selector {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.day-btn {
+    flex: 1;
+    aspect-ratio: 1;
+    background: var(--bg-card);
+    border: 1px solid #333;
+    border-radius: 50%;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.day-btn.selected {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+}
+
+.quick-select {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-quick {
+    flex: 1;
+    padding: 8px;
+    background: none;
+    border: 1px solid #444;
+    border-radius: 6px;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-quick:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+/* Sound Selector */
+.sound-selector {
+    display: flex;
+    gap: 10px;
+}
+
+.sound-selector select {
+    flex: 1;
+}
+
+.btn-preview {
+    padding: 14px 18px;
+    background: var(--bg-card);
+    border: 1px solid #333;
+    border-radius: 10px;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-preview:hover {
+    background: var(--accent);
+}
+
+/* Slider */
+.slider-group {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.slider-group input[type="range"] {
+    flex: 1;
+    height: 6px;
+    background: var(--bg-card);
+    border-radius: 3px;
+    outline: none;
+    -webkit-appearance: none;
+}
+
+.slider-group input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.slider-group input[type="range"]::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+}
+
+.slider-group span {
+    min-width: 2em;
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+/* Form Actions */
+.form-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 25px;
+}
+
+.form-actions .btn {
+    flex: 1;
+}
+
+.btn-cancel {
+    background: var(--bg-card);
+    color: var(--text-primary);
+}
+
+.btn-save {
+    background: var(--accent);
+    color: white;
+}
+
+.btn-save:hover {
+    background: var(--accent-hover);
+}
+
+.btn-delete {
+    background: var(--danger);
+    color: white;
+}
+
+/* Instance Modal */
+.instance-info {
+    text-align: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #333;
+}
+
+.instance-date {
+    font-size: 1.1rem;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.instance-label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.instance-original {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-top: 6px;
+}
+
+.instance-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #333;
+}
+
+.btn-skip {
+    background: none;
+    border: 1px solid var(--danger);
+    color: var(--danger);
+}
+
+.btn-skip:hover {
+    background: var(--danger);
+    color: white;
+}
+
+.btn-restore {
+    background: none;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+}
+
+.btn-restore:hover {
+    background: var(--accent);
+    color: white;
+}
+
+.instance-edit-recurring {
+    text-align: center;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #333;
+}
+
+.instance-edit-recurring a {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    text-decoration: none;
+}
+
+.instance-edit-recurring a:hover {
+    color: var(--accent);
+}
+
+/* Utility */
+.hidden {
+    display: none !important;
+}
+
+/* Media Queries */
+@media (min-width: 481px) {
+    .modal-content {
+        border-radius: 20px;
+        margin-bottom: 20px;
+    }
+
+    .modal {
+        align-items: center;
+    }
+}
+
+@media (max-width: 360px) {
+    .clock {
+        font-size: 3.5rem;
+    }
+
+    .alarm-time {
+        font-size: 1.6rem;
+    }
+}
