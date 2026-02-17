@@ -1,8 +1,7 @@
 # Core dependencies
 Flask>=3.0.0
 
-# Hardware libraries (only needed on Raspberry Pi)
-# Uncomment these when deploying to the Pi:
-# RPi.GPIO>=0.7.0
-# adafruit-circuitpython-ht16k33>=4.0.0
-# adafruit-circuitpython-ds3231>=2.0.0
+# Hardware libraries (Raspberry Pi)
+RPi.GPIO>=0.7.0
+adafruit-circuitpython-ht16k33>=4.0.0
+adafruit-circuitpython-ds3231>=2.0.0

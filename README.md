@@ -85,7 +85,7 @@ python3 -m venv ~/alarmclock/clockenv
 source ~/alarmclock/clockenv/bin/activate
 
 # Install Python packages
-pip install flask RPi.GPIO adafruit-circuitpython-ht16k33 adafruit-circuitpython-ds3231
+pip install -r requirements.txt
 ```
 
 ### 4. Copy Project Files
