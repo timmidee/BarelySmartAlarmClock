@@ -74,7 +74,15 @@ sudo raspi-config
 sudo reboot
 ```
 
-### 3. Install Dependencies
+### 3. Copy Project Files
+
+Copy all project files to the Pi (replace `pi@raspberrypi.local` with your Pi's address):
+
+```bash
+scp -r /path/to/alarmclock pi@raspberrypi.local:~/alarmclock
+```
+
+### 4. Install Dependencies
 
 ```bash
 sudo apt update
@@ -86,14 +94,6 @@ source ~/alarmclock/clockenv/bin/activate
 
 # Install Python packages
 pip install -r requirements.txt
-```
-
-### 4. Copy Project Files
-
-Copy all project files to the Pi (replace `pi@raspberrypi.local` with your Pi's address):
-
-```bash
-scp -r /path/to/alarmclock pi@raspberrypi.local:~/alarmclock
 ```
 
 ### 5. Configure for Real Hardware
