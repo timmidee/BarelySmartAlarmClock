@@ -17,20 +17,6 @@ class Display:
     # HT16K33 I2C address (default)
     DEFAULT_ADDRESS = 0x70
 
-    # Segment patterns for digits 0-9
-    DIGITS = [
-        0x3F,  # 0
-        0x06,  # 1
-        0x5B,  # 2
-        0x4F,  # 3
-        0x66,  # 4
-        0x6D,  # 5
-        0x7D,  # 6
-        0x07,  # 7
-        0x7F,  # 8
-        0x6F,  # 9
-    ]
-
     def __init__(self, mock=True, address=None):
         self.mock = mock
         self.address = address or self.DEFAULT_ADDRESS
@@ -54,11 +40,10 @@ class Display:
         """Initialize the real HT16K33 hardware."""
         try:
             import board
-            import busio
-            from adafruit_ht16k33.segments import Seg7x4
+            from adafruit_ht16k33.segments import BigSeg7x4
 
-            i2c = busio.I2C(board.SCL, board.SDA)
-            self._device = Seg7x4(i2c, address=self.address)
+            i2c = board.I2C()
+            self._device = BigSeg7x4(i2c, address=self.address)
             self._device.brightness = self._brightness / 15.0
             logger.info(f"HT16K33 display initialized at address 0x{self.address:02X}")
         except ImportError as e:
@@ -101,7 +86,7 @@ class Display:
             self._device.print(time_str)
 
             # Set colon (blinking effect handled in update loop)
-            self._device.colon = self._colon
+            self._device.colons[0] = self._colon
 
             # Upper-left dot indicates alarm is armed
             self._device.ampm = self._alarm_armed

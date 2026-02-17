@@ -29,14 +29,17 @@
 
 ### 1. Adafruit 1.2" 4-Digit 7-Segment Display (HT16K33)
 
-The display uses I2C communication and needs 4 connections:
+The display uses I2C communication and needs 5 connections:
 
 | Display Pin | Pi Pin | Description |
 |-------------|--------|-------------|
-| VCC / + | Pin 1 (3.3V) | Power |
+| VIN / + | Pin 2 (5V) | LED power |
+| IO | Pin 1 (3.3V) | I2C logic level |
 | GND / - | Pin 6 (GND) | Ground |
 | SDA / D | Pin 3 (GPIO2) | I2C Data |
 | SCL / C | Pin 5 (GPIO3) | I2C Clock |
+
+**Note:** VIN needs 5V to drive the LEDs. IO sets the I2C logic level and must match the Pi's 3.3V.
 
 **I2C Address:** 0x70 (default)
 
@@ -71,8 +74,8 @@ Using internal pull-up resistors, buttons connect to GPIO and ground:
 ```
                         Raspberry Pi Zero 2 W
                     ┌───────────────────────────┐
-                    │  (1) 3.3V ────────────────┼───── VCC (Display & RTC)
-                    │  (2) 5V                   │
+                    │  (1) 3.3V ────────────────┼───── IO (Display) + VCC (RTC)
+                    │  (2) 5V ──────────────────┼───── VIN (Display)
                     │  (3) GPIO2 ───────────────┼───── SDA (Display & RTC)
                     │  (4) 5V                   │
                     │  (5) GPIO3 ───────────────┼───── SCL (Display & RTC)
@@ -89,7 +92,7 @@ Using internal pull-up resistors, buttons connect to GPIO and ground:
                     └───────────────────────────┘
 ```
 
-The display and RTC share the same I2C bus (same 4 wires: VCC, GND, SDA, SCL).
+The display and RTC share the I2C bus (SDA, SCL, GND). The display needs an additional 5V connection for the LEDs.
 
 ## I2C Bus Setup
 
