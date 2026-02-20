@@ -126,12 +126,15 @@ function updateNextAlarmBanner() {
 async function loadAlarms() {
     try {
         const response = await fetch(`${API_BASE}/alarms`);
+        if (!response.ok) {
+            throw new Error(`Server returned ${response.status}`);
+        }
         alarms = await response.json();
         renderAlarms();
     } catch (error) {
         console.error('Error loading alarms:', error);
         document.getElementById('alarms-list').innerHTML =
-            '<div class="loading">Failed to load alarms</div>';
+            `<div class="loading">Failed to load alarms: ${error.message}</div>`;
     }
 }
 
@@ -476,6 +479,7 @@ function showSettings() {
     document.getElementById('setting-brightness').value = settings.display_brightness || 10;
     document.getElementById('brightness-value').textContent = settings.display_brightness || 10;
     document.getElementById('setting-snooze').value = settings.snooze_duration_minutes || 9;
+    document.getElementById('setting-timeout').value = settings.alarm_timeout_minutes || 5;
     document.getElementById('settings-modal').classList.remove('hidden');
 
     // Update slider displays on change
@@ -498,6 +502,7 @@ async function saveSettings(event) {
         volume: parseInt(document.getElementById('setting-volume').value),
         default_sound: document.getElementById('setting-sound').value,
         snooze_duration_minutes: parseInt(document.getElementById('setting-snooze').value),
+        alarm_timeout_minutes: parseInt(document.getElementById('setting-timeout').value),
         display_brightness: parseInt(document.getElementById('setting-brightness').value)
     };
 

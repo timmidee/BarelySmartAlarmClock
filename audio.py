@@ -5,6 +5,7 @@ Uses subprocess to play audio files through USB speakers.
 
 import logging
 import os
+import shutil
 import subprocess
 import threading
 from pathlib import Path
@@ -109,16 +110,8 @@ class AudioPlayer:
         ]
 
         for player_cmd in players:
-            try:
-                # Check if player exists
-                subprocess.run(
-                    ['which', player_cmd[0]],
-                    capture_output=True,
-                    check=True
-                )
+            if shutil.which(player_cmd[0]):
                 return player_cmd + [str(sound_path)]
-            except subprocess.CalledProcessError:
-                continue
 
         logger.warning("No audio player found. Install mpg123, aplay, or ffplay.")
         return None

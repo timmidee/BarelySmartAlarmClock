@@ -76,10 +76,10 @@ sudo reboot
 
 ### 3. Copy Project Files
 
-Copy all project files to the Pi (replace `pi@raspberrypi.local` with your Pi's address):
+Copy all project files to the Pi (replace `<user>@<pi-address>` with your Pi's address):
 
 ```bash
-rsync -av --exclude .git /path/to/alarmclock pi@raspberrypi.local:~/
+rsync -av --exclude .git /path/to/alarmclock <user>@<pi-address>:~/
 ```
 
 ### 4. Install Dependencies
@@ -96,7 +96,19 @@ source ~/alarmclock/clockenv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 5. Configure for Real Hardware
+### 5. Wire the Hardware
+
+Follow the instructions in [wiring/WIRING.md](wiring/WIRING.md) and use the test scripts to verify each component.
+
+### 6. Verify I2C Devices
+
+```bash
+i2cdetect -y 1
+```
+
+You should see devices at addresses `0x68` (RTC) and `0x70` (display).
+
+### 7. Configure for Real Hardware
 
 Edit `config.json` on the Pi:
 
@@ -116,18 +128,6 @@ Set `use_mock_hardware` to `false`:
 }
 ```
 
-### 6. Wire the Hardware
-
-Follow the instructions in [wiring/WIRING.md](wiring/WIRING.md) and use the test scripts to verify each component.
-
-### 7. Verify I2C Devices
-
-```bash
-i2cdetect -y 1
-```
-
-You should see devices at addresses `0x68` (RTC) and `0x70` (display).
-
 ### 8. Run the Application
 
 ```bash
@@ -141,14 +141,20 @@ python app.py
 A default alarm sound is included. To add more sounds, copy MP3, WAV, OGG, or FLAC files from your computer to the Pi:
 
 ```bash
-rsync -av /path/to/your/sounds/ pi@raspberrypi.local:~/alarmclock/sounds/
+rsync -av /path/to/your/sounds/ <user>@<pi-address>:~/alarmclock/sounds/
 ```
 
 Access the web UI at `http://<pi-ip>:5000`
 
 ## Run on Boot (systemd)
 
-Create `/etc/systemd/system/alarmclock.service`:
+Create the service file:
+
+```bash
+sudo nano /etc/systemd/system/alarmclock.service
+```
+
+Paste the following. If you followed this guide, the paths below are correct as-is. If you used a different username or install location, update the `User`, `WorkingDirectory`, `Environment`, and `ExecStart` lines to match.
 
 ```ini
 [Unit]
@@ -157,9 +163,11 @@ After=network.target
 
 [Service]
 Type=simple
+# Change "pi" to your username if different (run "whoami" to check)
 User=pi
+# Change these paths if you installed to a different location
 WorkingDirectory=/home/pi/alarmclock
-Environment=PATH=/home/pi/alarmclock/clockenv/bin
+Environment=PATH=/home/pi/alarmclock/clockenv/bin:/usr/bin:/usr/local/bin:/bin
 ExecStart=/home/pi/alarmclock/clockenv/bin/python app.py
 Restart=always
 RestartSec=5
@@ -168,12 +176,40 @@ RestartSec=5
 WantedBy=multi-user.target
 ```
 
-Enable and start:
+Save and exit (`Ctrl+X`, then `Y`, then `Enter`), then enable and start:
 
 ```bash
 sudo systemctl enable alarmclock
 sudo systemctl start alarmclock
 ```
+
+Check it's running:
+
+```bash
+sudo systemctl status alarmclock
+```
+
+To stop and disable (won't start on boot):
+
+```bash
+sudo systemctl stop alarmclock
+sudo systemctl disable alarmclock
+```
+
+### Viewing logs
+
+```bash
+# Last 100 lines
+journalctl -u alarmclock -n 100
+
+# Follow live output
+journalctl -u alarmclock -f
+
+# Search for errors
+journalctl -u alarmclock -n 200 | grep ERROR
+```
+
+Press `q` to exit, `/` to search within the pager.
 
 ## REST API
 
@@ -200,9 +236,12 @@ sudo systemctl start alarmclock
 |--------|---------|-------------|
 | `use_mock_hardware` | `true` | Use mock hardware for testing |
 | `display_brightness` | `10` | Display brightness (0-15) |
-| `snooze_duration_minutes` | `9` | Snooze duration |
+| `volume` | `80` | Audio volume (0-100) |
+| `snooze_duration_minutes` | `9` | Snooze duration (1-30) |
+| `alarm_timeout_minutes` | `5` | Auto-dismiss alarm after this many minutes (1-60) |
 | `alarm_check_interval_seconds` | `30` | How often to check alarms |
 | `sounds_directory` | `"sounds"` | Directory containing alarm sounds |
+| `default_sound` | `""` | Default sound for new alarms (empty = first available) |
 
 ## Troubleshooting
 

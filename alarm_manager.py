@@ -21,12 +21,13 @@ class AlarmManager:
         'mon': 0, 'tue': 1, 'wed': 2, 'thu': 3, 'fri': 4, 'sat': 5, 'sun': 6
     }
 
-    def __init__(self, rtc, audio_player, display, snooze_minutes=9, check_interval=30):
+    def __init__(self, rtc, audio_player, display, snooze_minutes=9, check_interval=30, timeout_minutes=5):
         self.rtc = rtc
         self.audio_player = audio_player
         self.display = display
         self.snooze_minutes = snooze_minutes
         self.check_interval = check_interval
+        self.timeout_minutes = timeout_minutes
 
         self.alarms_file = Path(__file__).parent / 'alarms.json'
         self.overrides_file = Path(__file__).parent / 'overrides.json'
@@ -42,6 +43,7 @@ class AlarmManager:
         self._ringing = False
         self._ringing_alarm_id = None
         self._ringing_override_id = None
+        self._ringing_since = None
         self._snooze_until = None
 
     def _load_alarms(self):
@@ -49,9 +51,12 @@ class AlarmManager:
         if self.alarms_file.exists():
             try:
                 with open(self.alarms_file) as f:
-                    self.alarms = json.load(f)
+                    data = json.load(f)
+                if not isinstance(data, dict):
+                    raise ValueError(f"Expected dict, got {type(data).__name__}")
+                self.alarms = data
                 logger.info(f"Loaded {len(self.alarms)} alarms")
-            except (json.JSONDecodeError, IOError) as e:
+            except (json.JSONDecodeError, IOError, ValueError) as e:
                 logger.error(f"Failed to load alarms: {e}")
                 self.alarms = {}
         else:
@@ -302,6 +307,7 @@ class AlarmManager:
         self._ringing = False
         self._ringing_alarm_id = None
         self._ringing_override_id = None
+        self._ringing_since = None
         self._snooze_until = None
         self.audio_player.stop()
         self.display.set_alarm_indicator(False)
@@ -398,10 +404,19 @@ class AlarmManager:
                 self._trigger_alarm(self._ringing_alarm_id, self._ringing_override_id)
             return
 
+        # Auto-dismiss if alarm has been ringing too long
+        if self._ringing and self._ringing_since:
+            elapsed = (now - self._ringing_since).total_seconds() / 60
+            if elapsed >= self.timeout_minutes:
+                logger.info(f"Alarm timed out after {self.timeout_minutes} minutes, auto-dismissing")
+                self.dismiss()
+                return
+
         # Already ringing, don't check
         if self._ringing:
             return
 
+        alarm_to_trigger = None
         with self._lock:
             for alarm_id, alarm in self.alarms.items():
                 if not alarm['enabled']:
@@ -436,8 +451,11 @@ class AlarmManager:
 
                 # Check if current time matches effective alarm time
                 if effective_time == current_time:
-                    self._trigger_alarm(alarm_id, override['id'] if override else None)
+                    alarm_to_trigger = (alarm_id, override['id'] if override else None)
                     break
+
+        if alarm_to_trigger:
+            self._trigger_alarm(*alarm_to_trigger)
 
     def _trigger_alarm(self, alarm_id, override_id=None):
         """Trigger an alarm."""
@@ -455,6 +473,7 @@ class AlarmManager:
         self._ringing = True
         self._ringing_alarm_id = alarm_id
         self._ringing_override_id = override_id
+        self._ringing_since = self.rtc.get_time()
         self.display.set_alarm_indicator(True)
         self.audio_player.play(sound, loop=True)
 

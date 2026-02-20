@@ -283,6 +283,7 @@ def get_settings():
     return jsonify({
         'display_brightness': config.get('display_brightness', 10),
         'snooze_duration_minutes': config.get('snooze_duration_minutes', 9),
+        'alarm_timeout_minutes': config.get('alarm_timeout_minutes', 5),
         'volume': config.get('volume', 80),
         'default_sound': config.get('default_sound', '')
     })
@@ -313,6 +314,12 @@ def update_settings():
         config['snooze_duration_minutes'] = snooze
         alarm_manager.snooze_minutes = snooze
 
+    # Update alarm timeout
+    if 'alarm_timeout_minutes' in data:
+        timeout = max(1, min(60, int(data['alarm_timeout_minutes'])))
+        config['alarm_timeout_minutes'] = timeout
+        alarm_manager.timeout_minutes = timeout
+
     # Update volume
     if 'volume' in data:
         volume = max(0, min(100, int(data['volume'])))
@@ -330,6 +337,7 @@ def update_settings():
     return jsonify({
         'display_brightness': config.get('display_brightness', 10),
         'snooze_duration_minutes': config.get('snooze_duration_minutes', 9),
+        'alarm_timeout_minutes': config.get('alarm_timeout_minutes', 5),
         'volume': config.get('volume', 80),
         'default_sound': config.get('default_sound', '')
     })
@@ -352,7 +360,8 @@ def init_hardware(config):
         audio_player=audio_player,
         display=display,
         snooze_minutes=config.get('snooze_duration_minutes', 9),
-        check_interval=config.get('alarm_check_interval_seconds', 30)
+        check_interval=config.get('alarm_check_interval_seconds', 30),
+        timeout_minutes=config.get('alarm_timeout_minutes', 5)
     )
 
     button_handler = ButtonHandler(
