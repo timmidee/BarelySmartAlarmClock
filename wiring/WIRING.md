@@ -108,25 +108,7 @@ I2C Bus (GPIO2 SDA, GPIO3 SCL)
 
 ## Setup
 
-### 1. Enable I2C on the Pi
-
-```bash
-sudo raspi-config
-# Navigate to: Interface Options → I2C → Enable
-```
-
-### 2. Install Dependencies
-
-```bash
-sudo apt update
-sudo apt install i2c-tools python3-rpi.gpio alsa-utils mpg123
-pip install adafruit-circuitpython-ht16k33 adafruit-circuitpython-ds3231
-```
-
-### 3. Connect USB Speakers
-
-1. Connect USB speakers to the micro USB OTG hub
-2. Connect the hub to the Pi's micro USB port
+Follow the full setup instructions in the [README](../README.md). Once the software is installed, connect USB speakers to the micro USB OTG hub and the hub to the Pi's micro USB port, then use the test scripts below to verify each component.
 
 ## Test Scripts
 

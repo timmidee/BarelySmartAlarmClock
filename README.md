@@ -68,6 +68,7 @@ Use Raspberry Pi Imager to flash Raspberry Pi OS Lite (64-bit) to your SD card. 
 
 ### 2. Enable I2C
 
+On the pi:
 ```bash
 sudo raspi-config
 # Navigate to: Interface Options → I2C → Enable
@@ -78,21 +79,23 @@ sudo reboot
 
 Copy all project files to the Pi (replace `<user>@<pi-address>` with your Pi's address):
 
+On your computer (not the pi):
 ```bash
 rsync -av --exclude .git /path/to/alarmclock <user>@<pi-address>:~/
 ```
 
 ### 4. Install Dependencies
 
+On the pi:
 ```bash
 sudo apt update
-sudo apt install python3-pip python3-venv i2c-tools mpg123
+sudo apt install python3-pip python3-venv i2c-tools mpg123 alsa-utils
 
 # Create virtual environment
 python3 -m venv ~/alarmclock/clockenv
 source ~/alarmclock/clockenv/bin/activate
 
-# Install Python packages
+# Install Python packages into virtual environment
 pip install -r requirements.txt
 ```
 
@@ -102,6 +105,7 @@ Follow the instructions in [wiring/WIRING.md](wiring/WIRING.md) and use the test
 
 ### 6. Verify I2C Devices
 
+On the pi:
 ```bash
 i2cdetect -y 1
 ```
@@ -122,14 +126,18 @@ Set `use_mock_hardware` to `false`:
 {
     "use_mock_hardware": false,
     "display_brightness": 10,
+    "volume": 80,
     "snooze_duration_minutes": 9,
+    "alarm_timeout_minutes": 5,
     "alarm_check_interval_seconds": 30,
-    "sounds_directory": "sounds"
+    "sounds_directory": "sounds",
+    "default_sound": "default.mp3"
 }
 ```
 
 ### 8. Run the Application
 
+On the pi:
 ```bash
 source ~/alarmclock/clockenv/bin/activate
 cd ~/alarmclock
@@ -140,21 +148,22 @@ python app.py
 
 A default alarm sound is included. To add more sounds, copy MP3, WAV, OGG, or FLAC files from your computer to the Pi:
 
+On your computer (not the pi):
 ```bash
 rsync -av /path/to/your/sounds/ <user>@<pi-address>:~/alarmclock/sounds/
 ```
 
-Access the web UI at `http://<pi-ip>:5000`
+Access the web UI at `http://<pi-ip>:8080` to make sure it's running.
 
 ## Run on Boot (systemd)
 
-Create the service file:
+On the pi, create the service file (if the python app is still running just use ctrl+c to stop it, we're going to have the pi auto-launch it in a moment and make sure it always starts after the pi reboots):
 
 ```bash
 sudo nano /etc/systemd/system/alarmclock.service
 ```
 
-Paste the following. If you followed this guide, the paths below are correct as-is. If you used a different username or install location, update the `User`, `WorkingDirectory`, `Environment`, and `ExecStart` lines to match.
+Paste the following and replace <username> with your username (the default is "pi", look up your username by running 'whoami'). If you used a different install location, update the `WorkingDirectory`, `Environment`, and `ExecStart` lines to match.
 
 ```ini
 [Unit]
@@ -163,12 +172,12 @@ After=network.target
 
 [Service]
 Type=simple
-# Change "pi" to your username if different (run "whoami" to check)
-User=pi
+# Change <username> to your username (run "whoami" to check)
+User=<username>
 # Change these paths if you installed to a different location
-WorkingDirectory=/home/pi/alarmclock
-Environment=PATH=/home/pi/alarmclock/clockenv/bin:/usr/bin:/usr/local/bin:/bin
-ExecStart=/home/pi/alarmclock/clockenv/bin/python app.py
+WorkingDirectory=/home/<username>/alarmclock
+Environment=PATH=/home/<username>/alarmclock/clockenv/bin:/usr/bin:/usr/local/bin:/bin
+ExecStart=/home/<username>/alarmclock/clockenv/bin/python app.py
 Restart=always
 RestartSec=5
 
@@ -241,7 +250,7 @@ Press `q` to exit, `/` to search within the pager.
 | `alarm_timeout_minutes` | `5` | Auto-dismiss alarm after this many minutes (1-60) |
 | `alarm_check_interval_seconds` | `30` | How often to check alarms |
 | `sounds_directory` | `"sounds"` | Directory containing alarm sounds |
-| `default_sound` | `""` | Default sound for new alarms (empty = first available) |
+| `default_sound` | `"default.mp3"` | Default sound for new alarms |
 
 ## Troubleshooting
 
@@ -252,7 +261,7 @@ Press `q` to exit, `/` to search within the pager.
 
 ### No audio
 - Check USB speaker connection: `aplay -l`
-- Install audio player: `sudo apt install mpg123`
+- Install audio players: `sudo apt install mpg123 alsa-utils`
 - Set audio output: `sudo raspi-config` → System Options → Audio
 
 ### Display shows wrong time

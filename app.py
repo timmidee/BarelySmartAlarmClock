@@ -285,7 +285,7 @@ def get_settings():
         'snooze_duration_minutes': config.get('snooze_duration_minutes', 9),
         'alarm_timeout_minutes': config.get('alarm_timeout_minutes', 5),
         'volume': config.get('volume', 80),
-        'default_sound': config.get('default_sound', '')
+        'default_sound': config.get('default_sound', 'default.mp3')
     })
 
 
@@ -339,7 +339,7 @@ def update_settings():
         'snooze_duration_minutes': config.get('snooze_duration_minutes', 9),
         'alarm_timeout_minutes': config.get('alarm_timeout_minutes', 5),
         'volume': config.get('volume', 80),
-        'default_sound': config.get('default_sound', '')
+        'default_sound': config.get('default_sound', 'default.mp3')
     })
 
 
