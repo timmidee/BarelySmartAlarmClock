@@ -27,21 +27,20 @@
 
 ## Components
 
-### 1. Adafruit 1.2" 4-Digit 7-Segment Display (HT16K33)
+### 1. 0.56" 4-Digit 7-Segment Display (HT16K33)
 
-The display uses I2C communication and needs 5 connections:
+The display uses I2C communication and needs 4 connections:
 
 | Display Pin | Pi Pin | Description |
 |-------------|--------|-------------|
-| VIN / + | Pin 2 (5V) | LED power |
-| IO | Pin 1 (3.3V) | I2C logic level |
-| GND / - | Pin 6 (GND) | Ground |
-| SDA / D | Pin 3 (GPIO2) | I2C Data |
-| SCL / C | Pin 5 (GPIO3) | I2C Clock |
+| VCC | Pin 1 (3.3V) | Power |
+| GND | Pin 6 (GND) | Ground |
+| SDA | Pin 3 (GPIO2) | I2C Data |
+| SCL | Pin 5 (GPIO3) | I2C Clock |
 
-**Note:** VIN needs 5V to drive the LEDs. IO sets the I2C logic level and must match the Pi's 3.3V.
+**Note:** Connect VCC to 3.3V, not 5V. The board supports 3.3V–5V, but its I2C pull-up resistors are tied to VCC. Powering from 5V would pull SDA/SCL up to 5V and damage the Pi's 3.3V GPIO pins.
 
-**I2C Address:** 0x70 (default)
+**I2C Address:** 0x70 (default, all A0/A1/A2 jumpers unsoldered)
 
 ### 2. DS3231 RTC Module
 
@@ -74,8 +73,8 @@ Using internal pull-up resistors, buttons connect to GPIO and ground:
 ```
                         Raspberry Pi Zero 2 W
                     ┌───────────────────────────┐
-                    │  (1) 3.3V ────────────────┼───── IO (Display) + VCC (RTC)
-                    │  (2) 5V ──────────────────┼───── VIN (Display)
+                    │  (1) 3.3V ────────────────┼───── VCC (Display) + VCC (RTC)
+                    │  (2) 5V                   │
                     │  (3) GPIO2 ───────────────┼───── SDA (Display & RTC)
                     │  (4) 5V                   │
                     │  (5) GPIO3 ───────────────┼───── SCL (Display & RTC)
@@ -92,7 +91,7 @@ Using internal pull-up resistors, buttons connect to GPIO and ground:
                     └───────────────────────────┘
 ```
 
-The display and RTC share the I2C bus (SDA, SCL, GND). The display needs an additional 5V connection for the LEDs.
+The display and RTC share the I2C bus (SDA, SCL, GND). Both run at 3.3V.
 
 ## I2C Bus Setup
 
