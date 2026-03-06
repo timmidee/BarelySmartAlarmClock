@@ -517,7 +517,13 @@ async function loadSettings() {
 }
 
 async function showSettings() {
+    const icon = document.getElementById('settings-btn-icon');
+    const spinner = document.getElementById('settings-btn-spinner');
+    icon.classList.add('hidden');
+    spinner.classList.remove('hidden');
     await loadSettings();
+    spinner.classList.add('hidden');
+    icon.classList.remove('hidden');
     _renderSettings();
 }
 
