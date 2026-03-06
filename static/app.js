@@ -516,7 +516,12 @@ async function loadSettings() {
     }
 }
 
-function showSettings() {
+async function showSettings() {
+    await loadSettings();
+    _renderSettings();
+}
+
+function _renderSettings() {
     // Populate sound selector
     const soundSelect = document.getElementById('setting-sound');
     soundSelect.innerHTML = '<option value="">Select a sound...</option>';
