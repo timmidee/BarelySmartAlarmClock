@@ -44,6 +44,7 @@ class Display:
 
             i2c = board.I2C()
             self._device = BigSeg7x4(i2c, address=self.address)
+            self._device.auto_write = False
             self._device.brightness = self._brightness / 15.0
             logger.info(f"HT16K33 display initialized at address 0x{self.address:02X}")
         except ImportError as e:
@@ -78,18 +79,11 @@ class Display:
     def show_time(self, hours, minutes):
         """Display time on the 7-segment display."""
         if self._device:
-            # Real hardware
-            self._device.fill(0)
-
-            # Format time string
             time_str = f"{hours:02d}{minutes:02d}"
             self._device.print(time_str)
-
-            # Set colon (blinking effect handled in update loop)
             self._device.colons[0] = self._colon
-
-            # Upper-left dot indicates alarm is armed
             self._device.ampm = self._alarm_armed
+            self._device.show()
         else:
             # Mock mode - log to console
             colon = ':' if self._colon else ' '
@@ -109,6 +103,7 @@ class Display:
         """Clear the display."""
         if self._device:
             self._device.fill(0)
+            self._device.show()
         logger.debug("Display cleared")
 
     def _update_loop(self):
