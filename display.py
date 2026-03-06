@@ -40,10 +40,10 @@ class Display:
         """Initialize the real HT16K33 hardware."""
         try:
             import board
-            from adafruit_ht16k33.segments import BigSeg7x4
+            from adafruit_ht16k33.segments import Seg7x4
 
             i2c = board.I2C()
-            self._device = BigSeg7x4(i2c, address=self.address)
+            self._device = Seg7x4(i2c, address=self.address)
             self._device.auto_write = False
             self._device.brightness = self._brightness / 15.0
             logger.info(f"HT16K33 display initialized at address 0x{self.address:02X}")
@@ -79,10 +79,9 @@ class Display:
     def show_time(self, hours, minutes):
         """Display time on the 7-segment display."""
         if self._device:
-            time_str = f"{hours:02d}{minutes:02d}"
+            time_str = f"{hours:02d}{minutes:02d}" + ("." if self._alarm_armed else "")
             self._device.print(time_str)
-            self._device.colons[0] = self._colon
-            self._device.ampm = self._alarm_armed
+            self._device.colon = self._colon
             self._device.show()
         else:
             # Mock mode - log to console
