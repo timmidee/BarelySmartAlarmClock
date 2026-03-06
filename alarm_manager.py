@@ -4,6 +4,7 @@ Alarm Manager - Handles alarm storage, scheduling, and triggering.
 
 import json
 import logging
+import math
 import threading
 import uuid
 from datetime import datetime, timedelta
@@ -21,12 +22,11 @@ class AlarmManager:
         'mon': 0, 'tue': 1, 'wed': 2, 'thu': 3, 'fri': 4, 'sat': 5, 'sun': 6
     }
 
-    def __init__(self, rtc, audio_player, display, snooze_minutes=9, check_interval=30, timeout_minutes=5):
+    def __init__(self, rtc, audio_player, display, snooze_minutes=9, timeout_minutes=5):
         self.rtc = rtc
         self.audio_player = audio_player
         self.display = display
         self.snooze_minutes = snooze_minutes
-        self.check_interval = check_interval
         self.timeout_minutes = timeout_minutes
 
         self.alarms_file = Path(__file__).parent / 'alarms.json'
@@ -45,6 +45,7 @@ class AlarmManager:
         self._ringing_override_id = None
         self._ringing_since = None
         self._snooze_until = None
+        self._triggered_at = {}  # alarm_id -> 'YYYY-MM-DD HH:MM' of last trigger
 
     def _load_alarms(self):
         """Load alarms from JSON file."""
@@ -205,7 +206,7 @@ class AlarmManager:
         with self._lock:
             return self.alarms.get(alarm_id)
 
-    def create_alarm(self, time, days, sound='default.mp3', enabled=True, label=''):
+    def create_alarm(self, time, days, sound='default.mp3', enabled=True, label='', one_time=False):
         """Create a new alarm."""
         alarm_id = str(uuid.uuid4())[:8]
 
@@ -220,7 +221,8 @@ class AlarmManager:
             'days': days,
             'sound': sound,
             'enabled': enabled,
-            'label': label
+            'label': label,
+            'one_time': one_time
         }
 
         with self._lock:
@@ -251,6 +253,8 @@ class AlarmManager:
                 alarm['enabled'] = data['enabled']
             if 'label' in data:
                 alarm['label'] = data['label']
+            if 'one_time' in data:
+                alarm['one_time'] = data['one_time']
 
             self._save_alarms()
             logger.info(f"Updated alarm {alarm_id}")
@@ -276,6 +280,18 @@ class AlarmManager:
 
             alarm = self.alarms[alarm_id]
             alarm['enabled'] = not alarm['enabled']
+
+            # When re-enabling a one-time alarm, update the day to the next valid occurrence
+            if alarm['enabled'] and alarm.get('one_time'):
+                now = self.rtc.get_time()
+                short_day_names = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+                alarm_h, alarm_m = map(int, alarm['time'].split(':'))
+                if alarm_h * 60 + alarm_m <= now.hour * 60 + now.minute:
+                    day_index = (now.weekday() + 1) % 7  # tomorrow
+                else:
+                    day_index = now.weekday()  # still today
+                alarm['days'] = [short_day_names[day_index]]
+
             self._save_alarms()
             logger.info(f"Toggled alarm {alarm_id} to {alarm['enabled']}")
             return alarm
@@ -283,6 +299,10 @@ class AlarmManager:
     def is_ringing(self):
         """Check if an alarm is currently ringing."""
         return self._ringing
+
+    def is_snoozed(self):
+        """Check if an alarm is currently snoozed (not ringing, but will ring again)."""
+        return self._snooze_until is not None and not self._ringing
 
     def snooze(self):
         """Snooze the currently ringing alarm."""
@@ -296,9 +316,11 @@ class AlarmManager:
         logger.info(f"Alarm snoozed until {self._snooze_until.strftime('%H:%M')}")
 
     def dismiss(self):
-        """Dismiss the currently ringing alarm."""
-        if not self._ringing:
+        """Dismiss the currently ringing or snoozed alarm."""
+        if not self._ringing and not self._snooze_until:
             return
+
+        alarm_id = self._ringing_alarm_id
 
         # Clear the override that was used for this alarm instance
         if self._ringing_override_id:
@@ -313,6 +335,15 @@ class AlarmManager:
         self.display.set_alarm_indicator(False)
         logger.info("Alarm dismissed")
 
+        # Disable one-time alarms after they fire
+        if alarm_id:
+            with self._lock:
+                alarm = self.alarms.get(alarm_id)
+                if alarm and alarm.get('one_time'):
+                    alarm['enabled'] = False
+                    self._save_alarms()
+                    logger.info(f"One-time alarm {alarm_id} disabled after firing")
+
     def get_next_alarm_info(self):
         """Get information about the next upcoming alarm."""
         now = self.rtc.get_time()
@@ -322,10 +353,38 @@ class AlarmManager:
         next_alarm = None
         min_minutes = float('inf')
 
+        # Capture snooze state (not lock-protected, safe to read outside lock)
+        snooze_until = self._snooze_until
+        snooze_alarm_id = self._ringing_alarm_id
+
         with self._lock:
+            # If snoozed, treat the snoozed alarm as the next upcoming alarm
+            if snooze_until and snooze_alarm_id:
+                snooze_minutes = (snooze_until - now).total_seconds() / 60
+                if snooze_minutes > 0:
+                    alarm = self.alarms.get(snooze_alarm_id)
+                    if alarm:
+                        short_day_names = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+                        min_minutes = snooze_minutes
+                        next_alarm = {
+                            'id': alarm['id'],
+                            'time': snooze_until.strftime('%H:%M'),
+                            'original_time': alarm['time'],
+                            'day': short_day_names[now.weekday()],
+                            'label': alarm['label'],
+                            'sound': alarm['sound'],
+                            'minutes_until': math.ceil(snooze_minutes),
+                            'target_date': now.strftime('%Y-%m-%d'),
+                            'has_override': False,
+                            'override_id': None,
+                            'is_snooze': True
+                        }
+
             for alarm in self.alarms.values():
                 if not alarm['enabled']:
                     continue
+                if snooze_until and alarm['id'] == snooze_alarm_id:
+                    continue  # already handled by snooze block above
 
                 for day_name in alarm['days']:
                     day_num = self.DAYS_MAP.get(day_name)
@@ -350,7 +409,7 @@ class AlarmManager:
                     effective_time = override['override_time'] if override and override.get('override_time') else alarm['time']
 
                     # If it's today, check if the effective time has passed
-                    if days_until == 0 and effective_time <= current_time:
+                    if days_until == 0 and effective_time < current_time:
                         days_until = 7
                         # Recalculate target date for next week
                         target_datetime = now + timedelta(days=days_until)
@@ -451,7 +510,10 @@ class AlarmManager:
 
                 # Check if current time matches effective alarm time
                 if effective_time == current_time:
-                    alarm_to_trigger = (alarm_id, override['id'] if override else None)
+                    now_minute = f"{today} {current_time}"
+                    if self._triggered_at.get(alarm_id) != now_minute:
+                        alarm_to_trigger = (alarm_id, override['id'] if override else None)
+                        self._triggered_at[alarm_id] = now_minute
                     break
 
         if alarm_to_trigger:
@@ -487,11 +549,7 @@ class AlarmManager:
             except Exception as e:
                 logger.error(f"Error checking alarms: {e}")
 
-            # Sleep in small intervals to allow quick shutdown
-            for _ in range(self.check_interval):
-                if not self._running:
-                    break
-                threading.Event().wait(1)
+            threading.Event().wait(1)
 
         logger.info("Alarm manager thread stopped")
 

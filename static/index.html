@@ -44,13 +44,18 @@
 
         <main>
             <div class="section-header">
-                <h2>Recurring Alarms</h2>
-                <button class="btn btn-add" onclick="showAddAlarm()">+ Add</button>
+                <h2>Recurring</h2>
+                <button class="btn btn-add" onclick="showAddRecurring()">+ Add</button>
             </div>
-
-            <div id="alarms-list" class="alarms-list">
+            <div id="recurring-list" class="alarms-list">
                 <div class="loading">Loading alarms...</div>
             </div>
+
+            <div class="section-header" style="margin-top: 28px">
+                <h2>One-time</h2>
+                <button class="btn btn-add" onclick="showAddAlarm()">+ Add</button>
+            </div>
+            <div id="onetime-list" class="alarms-list"></div>
         </main>
 
         <!-- Add/Edit Alarm Modal -->
@@ -74,6 +79,26 @@
                     </div>
 
                     <div class="form-group">
+                        <label for="alarm-sound">Sound</label>
+                        <div class="sound-selector">
+                            <select id="alarm-sound">
+                                <option value="default.mp3">Default</option>
+                            </select>
+                            <button type="button" class="btn-preview" onclick="previewSound()">▶</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="toggle-row">
+                            <span class="toggle-row-label">Recurring</span>
+                            <label class="toggle">
+                                <input type="checkbox" id="alarm-recurring" onchange="onRecurringToggle()">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="days-group" style="display:none">
                         <label>Days</label>
                         <div class="days-selector">
                             <button type="button" class="day-btn" data-day="mon">M</button>
@@ -88,16 +113,6 @@
                             <button type="button" class="btn-quick" onclick="selectWeekdays()">Weekdays</button>
                             <button type="button" class="btn-quick" onclick="selectWeekends()">Weekends</button>
                             <button type="button" class="btn-quick" onclick="selectAll()">Every day</button>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="alarm-sound">Sound</label>
-                        <div class="sound-selector">
-                            <select id="alarm-sound">
-                                <option value="default.mp3">Default</option>
-                            </select>
-                            <button type="button" class="btn-preview" onclick="previewSound()">▶</button>
                         </div>
                     </div>
 

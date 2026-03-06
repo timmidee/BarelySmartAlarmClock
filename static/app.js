@@ -37,12 +37,22 @@ async function checkStatus() {
         const response = await fetch(`${API_BASE}/status`);
         const status = await response.json();
 
-        // Update alarm ringing state
+        // Update alarm ringing/snoozed state
         const ringingEl = document.getElementById('alarm-ringing');
+        const snoozeBtn = document.querySelector('.btn-snooze');
+        const ringingText = document.querySelector('.ringing-text');
         if (status.alarm_ringing) {
+            ringingEl.classList.remove('hidden', 'snoozed');
+            snoozeBtn.classList.remove('hidden');
+            ringingText.textContent = 'ALARM!';
+        } else if (status.alarm_snoozed) {
             ringingEl.classList.remove('hidden');
+            ringingEl.classList.add('snoozed');
+            snoozeBtn.classList.add('hidden');
+            ringingText.textContent = 'Snoozed';
         } else {
             ringingEl.classList.add('hidden');
+            ringingEl.classList.remove('snoozed');
         }
 
         // Store and update next alarm info
@@ -73,22 +83,29 @@ function updateNextAlarmBanner() {
     }
 
     banner.classList.remove('no-alarm');
-    banner.onclick = editNextAlarm;
     document.querySelector('.next-alarm-chevron').classList.remove('hidden');
 
     // Display time
     timeEl.textContent = nextAlarmInfo.time;
 
-    // Display label and day
-    const dayNames = {
-        mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday',
-        fri: 'Friday', sat: 'Saturday', sun: 'Sunday',
-        monday: 'Monday', tuesday: 'Tuesday', wednesday: 'Wednesday',
-        thursday: 'Thursday', friday: 'Friday', saturday: 'Saturday', sunday: 'Sunday'
-    };
-    const dayName = dayNames[nextAlarmInfo.day.toLowerCase()] || nextAlarmInfo.day;
-    const labelText = nextAlarmInfo.label ? `${nextAlarmInfo.label} · ${dayName}` : dayName;
-    labelEl.textContent = labelText;
+    // Display label and day (or snoozed indicator)
+    if (nextAlarmInfo.is_snooze) {
+        banner.onclick = null;
+        document.querySelector('.next-alarm-chevron').classList.add('hidden');
+        const labelText = nextAlarmInfo.label ? `${nextAlarmInfo.label} · Snoozed` : 'Snoozed';
+        labelEl.textContent = labelText;
+    } else {
+        banner.onclick = editNextAlarm;
+        const dayNames = {
+            mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday',
+            fri: 'Friday', sat: 'Saturday', sun: 'Sunday',
+            monday: 'Monday', tuesday: 'Tuesday', wednesday: 'Wednesday',
+            thursday: 'Thursday', friday: 'Friday', saturday: 'Saturday', sunday: 'Sunday'
+        };
+        const dayName = dayNames[nextAlarmInfo.day.toLowerCase()] || nextAlarmInfo.day;
+        const labelText = nextAlarmInfo.label ? `${nextAlarmInfo.label} · ${dayName}` : dayName;
+        labelEl.textContent = labelText;
+    }
 
     // Display countdown
     const mins = nextAlarmInfo.minutes_until;
@@ -133,7 +150,7 @@ async function loadAlarms() {
         renderAlarms();
     } catch (error) {
         console.error('Error loading alarms:', error);
-        document.getElementById('alarms-list').innerHTML =
+        document.getElementById('recurring-list').innerHTML =
             `<div class="loading">Failed to load alarms: ${error.message}</div>`;
     }
 }
@@ -168,27 +185,27 @@ function updateSoundSelector() {
 
 // Render alarms list
 function renderAlarms() {
-    const container = document.getElementById('alarms-list');
+    const oneTime = alarms.filter(a => a.one_time).sort((a, b) => a.time.localeCompare(b.time));
+    const recurring = alarms.filter(a => !a.one_time).sort((a, b) => a.time.localeCompare(b.time));
 
-    if (alarms.length === 0) {
-        container.innerHTML = `
-            <div class="no-alarms">
-                <p>No alarms set</p>
-                <button class="btn btn-add" onclick="showAddAlarm()">Add your first alarm</button>
-            </div>
-        `;
+    renderAlarmList('onetime-list', oneTime);
+    renderAlarmList('recurring-list', recurring);
+}
+
+function renderAlarmList(containerId, list) {
+    const container = document.getElementById(containerId);
+
+    if (list.length === 0) {
+        container.innerHTML = '';
         return;
     }
 
-    // Sort by time
-    const sorted = [...alarms].sort((a, b) => a.time.localeCompare(b.time));
-
-    container.innerHTML = sorted.map(alarm => `
+    container.innerHTML = list.map(alarm => `
         <div class="alarm-card ${alarm.enabled ? '' : 'disabled'}">
             <div class="alarm-info" onclick="editAlarm('${alarm.id}')">
                 <div class="alarm-time">${alarm.time}</div>
                 ${alarm.label ? `<div class="alarm-label">${escapeHtml(alarm.label)}</div>` : ''}
-                <div class="alarm-days">${formatDays(alarm.days)}</div>
+                <div class="alarm-days">${alarm.one_time ? formatOneTimeDay(alarm.days, alarm.enabled) : formatDays(alarm.days)}</div>
             </div>
             <label class="toggle">
                 <input type="checkbox" ${alarm.enabled ? 'checked' : ''}
@@ -200,6 +217,16 @@ function renderAlarms() {
             </button>
         </div>
     `).join('');
+}
+
+function formatOneTimeDay(days, enabled) {
+    if (!enabled) return 'One-time';
+    const dayNames = {
+        mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday',
+        fri: 'Friday', sat: 'Saturday', sun: 'Sunday'
+    };
+    const day = days[0];
+    return `One-time · ${dayNames[day.toLowerCase().substring(0, 3)] || day}`;
 }
 
 function formatDays(days) {
@@ -226,6 +253,7 @@ function formatDays(days) {
 
     return sortedDays.map(d => dayNames[d]).join(', ');
 }
+
 
 function escapeHtml(text) {
     const div = document.createElement('div');
@@ -273,6 +301,11 @@ function setSelectedDays(days) {
     });
 }
 
+function onRecurringToggle() {
+    const recurring = document.getElementById('alarm-recurring').checked;
+    document.getElementById('days-group').style.display = recurring ? '' : 'none';
+}
+
 function selectWeekdays() {
     document.querySelectorAll('.day-btn').forEach(btn => {
         const isWeekday = ['mon', 'tue', 'wed', 'thu', 'fri'].includes(btn.dataset.day);
@@ -294,11 +327,19 @@ function selectAll() {
 }
 
 // Modal handling
+function showAddRecurring() {
+    showAddAlarm();
+    document.getElementById('alarm-recurring').checked = true;
+    document.getElementById('days-group').style.display = '';
+}
+
 function showAddAlarm() {
     document.getElementById('modal-title').textContent = 'Add Alarm';
     document.getElementById('alarm-id').value = '';
     document.getElementById('alarm-time').value = '07:00';
     document.getElementById('alarm-label').value = '';
+    document.getElementById('alarm-recurring').checked = false;
+    document.getElementById('days-group').style.display = 'none';
     setSelectedDays(['mon', 'tue', 'wed', 'thu', 'fri']);
     // Use default sound from settings, or first available sound
     const defaultSound = settings.default_sound || sounds[0]?.name || 'default.mp3';
@@ -314,6 +355,9 @@ function editAlarm(id) {
     document.getElementById('alarm-id').value = alarm.id;
     document.getElementById('alarm-time').value = alarm.time;
     document.getElementById('alarm-label').value = alarm.label || '';
+    const recurring = !alarm.one_time;
+    document.getElementById('alarm-recurring').checked = recurring;
+    document.getElementById('days-group').style.display = recurring ? '' : 'none';
     setSelectedDays(alarm.days);
     document.getElementById('alarm-sound').value = alarm.sound;
     document.getElementById('alarm-modal').classList.remove('hidden');
@@ -331,15 +375,26 @@ async function saveAlarm(event) {
     const id = document.getElementById('alarm-id').value;
     const time = document.getElementById('alarm-time').value;
     const label = document.getElementById('alarm-label').value.trim();
-    const days = getSelectedDays();
+    let days = getSelectedDays();
     const sound = document.getElementById('alarm-sound').value;
+    const one_time = !document.getElementById('alarm-recurring').checked;
 
-    if (days.length === 0) {
+    if (one_time) {
+        // Determine today or tomorrow based on whether the time has passed
+        const now = new Date();
+        const dayNames = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+        let dayIndex = now.getDay();
+        const [h, m] = time.split(':').map(Number);
+        if (h * 60 + m <= now.getHours() * 60 + now.getMinutes()) {
+            dayIndex = (dayIndex + 1) % 7;
+        }
+        days = [dayNames[dayIndex]];
+    } else if (days.length === 0) {
         alert('Please select at least one day');
         return;
     }
 
-    const data = { time, days, sound, label, enabled: true };
+    const data = { time, days, sound, label, enabled: true, one_time };
 
     try {
         let response;
@@ -445,6 +500,7 @@ async function dismissAlarm() {
     try {
         await fetch(`${API_BASE}/dismiss`, { method: 'POST' });
         checkStatus();
+        loadAlarms();
     } catch (error) {
         console.error('Error dismissing alarm:', error);
     }
@@ -550,6 +606,13 @@ async function previewSettingsSound() {
 // Instance modal functions
 function editNextAlarm() {
     if (!nextAlarmInfo) return;
+
+    // One-time alarms don't use overrides — edit the alarm directly
+    const alarm = alarms.find(a => a.id === nextAlarmInfo.id);
+    if (alarm && alarm.one_time) {
+        editAlarm(nextAlarmInfo.id);
+        return;
+    }
 
     // Populate sound selector
     const soundSelect = document.getElementById('instance-sound');

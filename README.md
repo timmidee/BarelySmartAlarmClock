@@ -5,7 +5,9 @@ A bedside alarm clock built on a Raspberry Pi Zero 2 W with a retro 7-segment LE
 ## Features
 
 - **7-segment LED display** showing the current time
-- **Multiple alarms** with individual day selection (any combination of days)
+- **Recurring alarms** with flexible day selection (any combination of days)
+- **One-time alarms** that auto-disable after firing
+- **Next alarm banner** showing countdown with tap-to-edit for per-instance overrides (change time or sound for just the next occurrence, or skip it)
 - **Web interface** for managing alarms from your phone or computer
 - **Physical buttons** for snooze and dismiss
 - **Audio playback** through USB speakers
@@ -36,7 +38,8 @@ alarmclock/
 ├── audio.py            # Sound playback
 ├── buttons.py          # GPIO button handling
 ├── config.json         # Configuration settings
-├── alarms.json         # Alarm data storage
+├── alarms.json         # Alarm data storage (auto-generated, gitignored)
+├── overrides.json      # Per-instance alarm overrides (auto-generated, gitignored)
 ├── requirements.txt    # Python dependencies
 ├── wiring/             # Hardware wiring guide and test scripts
 ├── static/
@@ -81,8 +84,10 @@ Copy all project files to the Pi (replace `<user>@<pi-address>` with your Pi's a
 
 On your computer (not the pi):
 ```bash
-rsync -av --exclude .git /path/to/alarmclock <user>@<pi-address>:~/
+rsync -av --exclude .git --exclude alarms.json --exclude overrides.json /path/to/alarmclock <user>@<pi-address>:~/
 ```
+
+> **Note:** `config.json` is copied on every redeploy, so any settings changed via the web UI (volume, brightness, snooze duration, etc.) will be lost. Re-apply them after redeploying.
 
 ### 4. Install Dependencies
 
@@ -129,7 +134,6 @@ Set `use_mock_hardware` to `false`:
     "volume": 80,
     "snooze_duration_minutes": 9,
     "alarm_timeout_minutes": 5,
-    "alarm_check_interval_seconds": 30,
     "sounds_directory": "sounds",
     "default_sound": "default.mp3"
 }
@@ -230,6 +234,11 @@ Press `q` to exit, `/` to search within the pager.
 | `/api/alarms/<id>` | PUT | Update alarm |
 | `/api/alarms/<id>` | DELETE | Delete alarm |
 | `/api/alarms/<id>/toggle` | POST | Toggle enabled |
+| `/api/overrides` | GET | List all overrides |
+| `/api/overrides` | POST | Create override for an alarm instance |
+| `/api/overrides/<id>` | GET | Get override |
+| `/api/overrides/<id>` | PUT | Update override |
+| `/api/overrides/<id>` | DELETE | Delete override (restore original) |
 | `/api/status` | GET | System status |
 | `/api/snooze` | POST | Snooze ringing alarm |
 | `/api/dismiss` | POST | Dismiss ringing alarm |
@@ -248,7 +257,6 @@ Press `q` to exit, `/` to search within the pager.
 | `volume` | `80` | Audio volume (0-100) |
 | `snooze_duration_minutes` | `9` | Snooze duration (1-30) |
 | `alarm_timeout_minutes` | `5` | Auto-dismiss alarm after this many minutes (1-60) |
-| `alarm_check_interval_seconds` | `30` | How often to check alarms |
 | `sounds_directory` | `"sounds"` | Directory containing alarm sounds |
 | `default_sound` | `"default.mp3"` | Default sound for new alarms |
 
@@ -267,3 +275,8 @@ Press `q` to exit, `/` to search within the pager.
 ### Display shows wrong time
 - Check RTC battery (CR2032)
 - Sync RTC from system time (automatic on startup with internet)
+
+## Known Issues
+
+### Time input box overflows modal on iOS Safari
+On iOS Safari, the time input in alarm modals overflows its container to the right. The cause appears to be iOS ignoring `box-sizing: border-box` on `input[type="time"]`, causing padding to be added outside the element width rather than inside. Unresolved.

@@ -47,7 +47,6 @@ def load_config():
         'use_mock_hardware': True,
         'display_brightness': 10,
         'snooze_duration_minutes': 9,
-        'alarm_check_interval_seconds': 30,
         'sounds_directory': 'sounds'
     }
 
@@ -97,7 +96,8 @@ def create_alarm():
         days=data['days'],
         sound=data.get('sound', 'default.mp3'),
         enabled=data.get('enabled', True),
-        label=data.get('label', '')
+        label=data.get('label', ''),
+        one_time=data.get('one_time', False)
     )
 
     return jsonify(alarm), 201
@@ -225,6 +225,7 @@ def get_status():
         'date': now.strftime('%Y-%m-%d'),
         'day': now.strftime('%A'),
         'alarm_ringing': alarm_manager.is_ringing(),
+        'alarm_snoozed': alarm_manager.is_snoozed(),
         'next_alarm': alarm_manager.get_next_alarm_info()
     })
 
@@ -240,11 +241,11 @@ def snooze():
 
 @app.route('/api/dismiss', methods=['POST'])
 def dismiss():
-    """Dismiss the currently ringing alarm."""
-    if alarm_manager.is_ringing():
+    """Dismiss the currently ringing or snoozed alarm."""
+    if alarm_manager.is_ringing() or alarm_manager.is_snoozed():
         alarm_manager.dismiss()
         return jsonify({'message': 'Alarm dismissed'})
-    return jsonify({'error': 'No alarm currently ringing'}), 400
+    return jsonify({'error': 'No alarm currently ringing or snoozed'}), 400
 
 
 @app.route('/api/sounds', methods=['GET'])
@@ -360,7 +361,6 @@ def init_hardware(config):
         audio_player=audio_player,
         display=display,
         snooze_minutes=config.get('snooze_duration_minutes', 9),
-        check_interval=config.get('alarm_check_interval_seconds', 30),
         timeout_minutes=config.get('alarm_timeout_minutes', 5)
     )
 

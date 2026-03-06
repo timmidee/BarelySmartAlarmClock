@@ -155,6 +155,15 @@ header {
     animation: pulse 1s infinite alternate;
 }
 
+.alarm-ringing.snoozed {
+    background: linear-gradient(135deg, var(--warning), #f9c784);
+    animation: none;
+}
+
+.alarm-ringing.snoozed .btn-dismiss {
+    color: var(--warning);
+}
+
 @keyframes pulse {
     from { transform: scale(1); opacity: 1; }
     to { transform: scale(1.02); opacity: 0.9; }
@@ -453,6 +462,12 @@ header {
     font-size: 1.5rem;
 }
 
+@media (hover: hover) {
+    .form-group input[type="time"] {
+        padding-right: 50px;
+    }
+}
+
 .form-group input:focus,
 .form-group select:focus {
     outline: none;
@@ -674,6 +689,19 @@ header {
 .instance-edit-recurring a:hover {
     color: var(--accent);
 }
+
+/* One-time toggle row */
+.toggle-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.toggle-row-label {
+    color: var(--text-primary);
+    font-size: 1rem;
+}
+
 
 /* Utility */
 .hidden {
